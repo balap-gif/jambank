@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Dashboard Monitor Bank Offline & Gangguan - With Countdown Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Background Image - Full visible without dark overlay */
+        body {
+            background-image: url('https://i.pinimg.com/736x/af/81/06/af810696a09689930f0f4eb1b3e69a85.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* Light overlay - very subtle for better text readability */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+
+        .clock-panel {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px 25px;
+            display: inline-block;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .current-time {
+            font-size: 2.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            letter-spacing: 2px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .current-date {
+            font-size: 1rem;
+            opacity: 0.95;
+            color: #fff;
+        }
+
+        /* Status Grid */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .bank-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(5px);
+            border-radius: 20px;
+            padding: 20px;
+            border-left: 5px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .bank-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        }
+
+        .bank-card.warning-bg {
+            background: rgba(245, 158, 11, 0.85);
+            backdrop-filter: blur(5px);
+            animation: pulseWarning 2s infinite;
+        }
+
+        @keyframes pulseWarning {
+            0%, 100% { background: rgba(245, 158, 11, 0.85); }
+            50% { background: rgba(245, 158, 11, 0.95); }
+        }
+
+        .bank-name {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #1e293b;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-online {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .status-offline {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .status-warning {
+            background: #f59e0b;
+            color: white;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .schedule-info {
+            font-size: 0.85rem;
+            color: #334155;
+            margin: 10px 0;
+            line-height: 1.5;
+            background: rgba(0,0,0,0.05);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+
+        .countdown-container {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.08);
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .countdown-label {
+            font-size: 0.7rem;
+            color: #475569;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .countdown-timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+
+        .countdown-timer.warning {
+            color: #d97706;
+            text-shadow: 0 0 5px rgba(217,119,6,0.3);
+        }
+
+        .countdown-timer.critical {
+            color: #dc2626;
+            animation: blink 1s infinite;
+        }
+
+        .countdown-timer.safe {
+            color: #059669;
+        }
+
+        .alert-message {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.08);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .next-event {
+            font-size: 0.7rem;
+            color: #d97706;
+            margin-top: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Log Section */
+        .log-section {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .log-section h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            padding: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            color: #334155;
+        }
+
+        .log-entry.alert {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .clear-log {
+            background: #64748b;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+
+        .clear-log:hover {
+            background: #475569;
+        }
+
+        button {
+            background: #3b82f6;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #2563eb;
+            transform: scale(1.02);
+        }
+
+        .footer {
+            text-align: center;
+            color: #1e293b;
+            margin-top: 20px;
+            font-size: 0.75rem;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="header">
+            <h1>Jadwal Bank & E-Wallet Monitor with Countdown</h1>
+            <div class="clock-panel">
+                <div class="current-time" id="currentTime">--:--:--</div>
+                <div class="current-date" id="currentDate">--</div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button onclick="toggleWarningSound()" id="soundBtn">🔊 Sound ON</button>
+            <button onclick="testAlarm()">🔔 Test Alarm</button>
+        </div>
+
+        <div class="status-grid" id="bankGrid"></div>
+
+        <div class="log-section">
+            <h3>
+                📋 Log Aktivitas & Alarm
+                <button class="clear-log" onclick="clearLog()">Clear Log</button>
+            </h3>
+            <div class="log-list" id="logList">
+                <div class="log-entry">System ready. Monitoring dimulai...</div>
+            </div>
+        </div>
+        <div class="footer">
+            ⏰ Timer countdown menunjukkan waktu tersisa sebelum bank offline atau gangguan terjadi.<br>
+            ⚠️ Warna oranye menandakan akan segera offline (kurang dari 30 menit), merah kurang dari 5 menit.
+        </div>
+    </div>
+
+    <script>
+        // ==================== KONFIGURASI JADWAL ====================
+        const bankSchedules = {
+            "BCA": {
+                schedule: [
+                    { days: [1,2,3,4,5], start: "22:00", end: "00:20" },
+                    { days: [0,6], start: null, end: null }
+                ],
+                note: "Libur tanggal merah tidak offline"
+            },
+            "MANDIRI": {
+                schedule: [
+                    { days: [0,1,2,3,4,5,6], start: "23:00", end: "03:00" }
+                ],
+                note: "Offline 23:00 - 03:00"
+            },
+            "BRI": {
+                schedule: [],
+                note: "ONLINE 24 JAM (Gangguan pukul 23:35 WIB)"
+            },
+            "BSI": {
+                schedule: [
+                    { days: [0,1,2,3,4,5,6], start: "22:00", end: "01:00" }
+                ],
+                note: "Offline 22:00 - 01:00"
+            },
+            "BNI": {
+                schedule: [],
+                note: "ONLINE 24 JAM (Gangguan pukul 23:00 WIB)"
+            },
+            "DANAMON": { schedule: [], note: "ONLINE 24 JAM" },
+            "CIMB": { schedule: [], note: "ONLINE 24 JAM" },
+            "MAYBANK": { schedule: [], note: "ONLINE 24 JAM" },
+            "JAGO": { schedule: [], note: "ONLINE 24 JAM" },
+            "SEABANK": { schedule: [], note: "ONLINE 24 JAM" },
+            "DANA": { schedule: [], note: "ONLINE 24 JAM" },
+            "OVO": { schedule: [], note: "ONLINE 24 JAM" },
+            "GOPAY": { schedule: [], note: "ONLINE 24 JAM" },
+            "LINKAJA": { schedule: [], note: "ONLINE 24 JAM" },
+            "QRIS": { schedule: [], note: "ONLINE 24 JAM" }
+        };
+
+        // Gangguan manual
+        let activeDisruptions = [
+            { bank: "BNI", start: "23:00", end: "23:59", message: "Gangguan Sistem Bank BNI" },
+            { bank: "BRI", start: "23:35", end: "23:59", message: "Gangguan Sistem Bank BRI" }
+        ];
+
+        let lastAlertState = {};
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        // Fungsi suara
+        function playBeep() {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const oscillator = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                oscillator.connect(gain);
+                gain.connect(audioCtx.destination);
+                oscillator.frequency.value = 880;
+                gain.gain.value = 0.3;
+                oscillator.start();
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 1);
+                oscillator.stop(audioCtx.currentTime + 0.8);
+            } catch(e) { console.log("Audio error"); }
+        }
+
+        function speakAlert(message) {
+            if (!soundEnabled) return;
+            if (!window.speechSynthesis) {
+                playBeep();
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.lang = 'id-ID';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+            playBeep();
+        }
+
+        function toggleWarningSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            btn.innerHTML = soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF";
+            addLog(`Suara alarm ${soundEnabled ? "diaktifkan" : "dimatikan"}`);
+        }
+
+        function testAlarm() {
+            speakAlert("TEST ALARM, Bank monitoring aktif");
+            addLog("🔊 Test alarm dipicu");
+        }
+
+        // Fungsi waktu
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return null;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function getCurrentMinutes() {
+            const now = new Date();
+            return now.getHours() * 60 + now.getMinutes();
+        }
+
+        function getDayOfWeek() {
+            return new Date().getDay();
+        }
+
+        // Menghitung waktu hingga event offline berikutnya
+        function getNextOfflineTime(bankName, currentMinutes, dayOfWeek) {
+            const bank = bankSchedules[bankName];
+            if (!bank || !bank.schedule || bank.schedule.length === 0) {
+                // Cek gangguan terjadwal untuk bank online 24 jam
+                const disruption = activeDisruptions.find(d => d.bank === bankName);
+                if (disruption) {
+                    const startMin = timeToMinutes(disruption.start);
+                    const endMin = timeToMinutes(disruption.end);
+                    if (currentMinutes < startMin) {
+                        return { type: 'disruption', time: startMin, message: disruption.message };
+                    }
+                    if (currentMinutes >= startMin && currentMinutes < endMin) {
+                        return { type: 'disruption', time: endMin, message: 'Berakhir' };
+                    }
+                }
+                return null;
+            }
+            
+            // Cari slot offline terdekat
+            let nextTime = null;
+            let nextType = 'schedule';
+            
+            for (const slot of bank.schedule) {
+                if (slot.days.includes(dayOfWeek) && slot.start !== null) {
+                    let startMin = timeToMinutes(slot.start);
+                    let endMin = timeToMinutes(slot.end);
+                    
+                    if (endMin < startMin) endMin += 24 * 60;
+                    
+                    if (currentMinutes < startMin) {
+                        if (nextTime === null || startMin < nextTime) {
+                            nextTime = startMin;
+                        }
+                    } else if (currentMinutes >= startMin && currentMinutes < endMin) {
+                        // Sedang offline, hitung waktu selesai
+                        if (nextTime === null || endMin < nextTime) {
+                            nextTime = endMin;
+                            nextType = 'end';
+                        }
+                    }
+                }
+            }
+            
+            // Cek juga hari berikutnya jika tidak ditemukan hari ini
+            if (nextTime === null) {
+                for (const slot of bank.schedule) {
+                    if (slot.start !== null) {
+                        let nextDay = (dayOfWeek + 1) % 7;
+                        let daysUntil = 0;
+                        while (!slot.days.includes(nextDay) && daysUntil < 7) {
+                            nextDay = (nextDay + 1) % 7;
+                            daysUntil++;
+                        }
+                        if (slot.days.includes(nextDay)) {
+                            let startMin = timeToMinutes(slot.start);
+                            nextTime = startMin + (daysUntil * 24 * 60);
+                        }
+                    }
+                }
+            }
+            
+            if (nextTime !== null) {
+                return { type: nextType, time: nextTime };
+            }
+            return null;
+        }
+
+        // Cek status bank
+        function isTimeInRange(currentMin, startMin, endMin) {
+            if (startMin === null || endMin === null) return false;
+            let s = startMin, e = endMin;
+            if (e < s) e += 24 * 60;
+            if (currentMin < s) currentMin += 24 * 60;
+            return currentMin >= s && currentMin < e;
+        }
+
+        function getBankStatus(bankName, currentMinutes, dayOfWeek) {
+            // Cek gangguan
+            for (const dis of activeDisruptions) {
+                if (dis.bank === bankName) {
+                    const startMin = timeToMinutes(dis.start);
+                    let endMin = timeToMinutes(dis.end);
+                    if (endMin < startMin) endMin += 24 * 60;
+                    let curMin = currentMinutes;
+                    if (curMin < startMin && endMin > 24*60) curMin += 24 * 60;
+                    if (curMin >= startMin && curMin < endMin) {
+                        return { status: "offline", reason: dis.message, isDisruption: true };
+                    }
+                }
+            }
+            
+            // Cek jadwal reguler
+            const bank = bankSchedules[bankName];
+            if (bank && bank.schedule && bank.schedule.length > 0) {
+                for (const slot of bank.schedule) {
+                    if (slot.days.includes(dayOfWeek) && slot.start !== null) {
+                        const startMin = timeToMinutes(slot.start);
+                        let endMin = timeToMinutes(slot.end);
+                        if (isTimeInRange(currentMinutes, startMin, endMin)) {
+                            return { status: "offline", reason: "Jadwal Offline", isDisruption: false };
+                        }
+                    }
+                }
+            }
+            return { status: "online", reason: "Aktif", isDisruption: false };
+        }
+
+        // Hitung countdown
+        function getCountdown(bankName, currentMinutes, dayOfWeek) {
+            const status = getBankStatus(bankName, currentMinutes, dayOfWeek);
+            
+            if (status.status === "offline") {
+                // Sedang offline, hitung sampai online kembali
+                const nextEvent = getNextOfflineTime(bankName, currentMinutes, dayOfWeek);
+                if (nextEvent && nextEvent.type === 'end') {
+                    let remaining = nextEvent.time - currentMinutes;
+                    if (remaining < 0) remaining += 24 * 60;
+                    return { 
+                        text: "Kembali online dalam", 
+                        remaining: remaining,
+                        isOffline: true,
+                        nextEvent: nextEvent
+                    };
+                }
+                return { text: "Sedang offline", remaining: 0, isOffline: true };
+            } else {
+                // Online, hitung sampai offline
+                const nextEvent = getNextOfflineTime(bankName, currentMinutes, dayOfWeek);
+                if (nextEvent && nextEvent.type !== 'end') {
+                    let remaining = nextEvent.time - currentMinutes;
+                    if (remaining < 0) remaining += 24 * 60;
+                    let label = "Akan offline dalam";
+                    if (nextEvent.type === 'disruption') label = "Gangguan dalam";
+                    return { 
+                        text: label, 
+                        remaining: remaining,
+                        isOffline: false,
+                        eventType: nextEvent.type,
+                        nextEvent: nextEvent
+                    };
+                }
+                return { text: "Online 24 jam", remaining: null, isOffline: false };
+            }
+        }
+
+        function formatCountdown(minutes) {
+            if (minutes === null) return "∞";
+            if (minutes < 0) return "00:00";
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}`;
+        }
+
+        // Log dan alarm
+        let logEntries = [];
+        let alertedBanks = {};
+
+        function addLog(message, isAlert = false) {
+            const timestamp = new Date().toLocaleTimeString('id-ID');
+            const logMsg = `[${timestamp}] ${message}`;
+            logEntries.unshift({ msg: logMsg, isAlert });
+            if (logEntries.length > 50) logEntries.pop();
+            renderLog();
+        }
+
+        function renderLog() {
+            const logContainer = document.getElementById('logList');
+            logContainer.innerHTML = logEntries.map(entry => 
+                `<div class="log-entry ${entry.isAlert ? 'alert' : ''}">${entry.msg}</div>`
+            ).join('');
+        }
+
+        function clearLog() {
+            logEntries = [];
+            addLog("Log dibersihkan");
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const currentSeconds = now.getSeconds();
+            const currentTimeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${currentSeconds.toString().padStart(2,'0')}`;
+            const dayOfWeek = now.getDay();
+            const dayName = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][dayOfWeek];
+            
+            document.getElementById('currentTime').innerText = `${currentTimeStr} WIB`;
+            document.getElementById('currentDate').innerText = `${dayName}, ${now.toLocaleDateString('id-ID')}`;
+            
+            const bankNames = Object.keys(bankSchedules);
+            const grid = document.getElementById('bankGrid');
+            
+            let offlineBanks = [];
+            let bcaOffline = false;
+            let bsiOffline = false;
+            
+            grid.innerHTML = bankNames.map(bankName => {
+                const status = getBankStatus(bankName, currentMinutes, dayOfWeek);
+                const countdownData = getCountdown(bankName, currentMinutes, dayOfWeek);
+                const isOffline = status.status === "offline";
+                const isWarning = !isOffline && countdownData.remaining !== null && countdownData.remaining <= 30;
+                const isCritical = !isOffline && countdownData.remaining !== null && countdownData.remaining <= 5;
+                
+                let borderColor = isOffline ? "#ef4444" : (isCritical ? "#ef4444" : (isWarning ? "#f59e0b" : "#10b981"));
+                let statusText = isOffline ? "OFFLINE" : "ONLINE";
+                let statusClass = isOffline ? "status-offline" : "status-online";
+                let warningClass = isWarning ? "warning-bg" : "";
+                let timerClass = "safe";
+                let timerValue = "";
+                
+                if (countdownData.remaining !== null) {
+                    timerClass = isCritical ? "critical" : (isWarning ? "warning" : "safe");
+                    timerValue = formatCountdown(countdownData.remaining);
+                } else {
+                    timerValue = "24 Jam";
+                    timerClass = "safe";
+                }
+                
+                let alertMsgDiv = "";
+                if (isOffline) {
+                    alertMsgDiv = `<div class="alert-message" style="color:#dc2626;">🔴 ${status.reason}</div>`;
+                    offlineBanks.push(bankName);
+                    if (bankName === "BCA") bcaOffline = true;
+                    if (bankName === "BSI") bsiOffline = true;
+                } else {
+                    alertMsgDiv = `<div class="alert-message" style="color:#059669;">✅ ${status.reason}</div>`;
+                }
+                
+                let countdownLabel = countdownData.text;
+                if (countdownData.remaining !== null && countdownData.remaining <= 0 && !isOffline) {
+                    countdownLabel = "Segera offline!";
+                }
+                
+                return `
+                    <div class="bank-card ${warningClass}" style="border-left-color: ${borderColor};">
+                        <div class="bank-name">
+                            ${bankName}
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="schedule-info">📅 ${bankSchedules[bankName].note}</div>
+                        <div class="countdown-container">
+                            <div class="countdown-label">⏰ ${countdownLabel}</div>
+                            <div class="countdown-timer ${timerClass}">${timerValue}</div>
+                        </div>
+                        ${alertMsgDiv}
+                        ${!isOffline && countdownData.remaining !== null && countdownData.remaining <= 15 && countdownData.remaining > 0 ? 
+                            `<div class="next-event">⚠️ Mendekati jam offline!</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            // Alarm khusus BCA & BSI
+            const currentHourMin = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            const isTargetTime = (currentHourMin >= "21:58" && currentHourMin <= "22:00");
+            
+            if (isTargetTime && bcaOffline && bsiOffline) {
+                const alarmKey = "BCA_BSI_OFFLINE_ALARM";
+                if (!alertedBanks[alarmKey]) {
+                    const alarmMessage = "BANK BCA DAN BSI OFFLINE";
+                    addLog(`🔊 ALARM: ${alarmMessage}`, true);
+                    speakAlert(alarmMessage);
+                    alertedBanks[alarmKey] = true;
+                    setTimeout(() => { alertedBanks[alarmKey] = false; }, 120000);
+                }
+            } else if (alertedBanks["BCA_BSI_OFFLINE_ALARM"]) {
+                alertedBanks["BCA_BSI_OFFLINE_ALARM"] = false;
+            }
+            
+            // Alarm untuk bank yang baru offline
+            for (const bank of offlineBanks) {
+                const lastStateKey = `last_${bank}`;
+                if (lastAlertState[lastStateKey] !== "offline") {
+                    const disruptionInfo = activeDisruptions.find(d => d.bank === bank);
+                    let alertMsg = disruptionInfo ? `PERHATIAN! ${bank} ${disruptionInfo.message}` : `PERHATIAN! ${bank} sedang offline`;
+                    addLog(`🔊 ALARM: ${alertMsg}`, true);
+                    speakAlert(alertMsg);
+                    lastAlertState[lastStateKey] = "offline";
+                }
+            }
+            
+            // Reset state bank yang sudah online
+            for (const bank of bankNames) {
+                const lastStateKey = `last_${bank}`;
+                const isCurrentlyOffline = offlineBanks.includes(bank);
+                if (!isCurrentlyOffline && lastAlertState[lastStateKey] === "offline") {
+                    lastAlertState[lastStateKey] = "online";
+                    addLog(`✅ ${bank} kembali online`);
+                } else if (!isCurrentlyOffline && !lastAlertState[lastStateKey]) {
+                    lastAlertState[lastStateKey] = "online";
+                }
+            }
+        }
+        
+        setInterval(updateDashboard, 1000);
+        updateDashboard();
+        
+        console.log("Dashboard ready dengan background image yang jelas terlihat!");
+        console.log("Fungsi tambahan: window.addDisruption(bank, start, end, message), window.removeDisruption(bank)");
+        
+        window.addDisruption = function(bank, start, end, message) {
+            activeDisruptions.push({ bank, start, end, message });
+            addLog(`⚠️ Gangguan ditambahkan: ${bank} pukul ${start}-${end}`, true);
+        };
+        window.removeDisruption = function(bank) {
+            activeDisruptions = activeDisruptions.filter(d => d.bank !== bank);
+            addLog(`🛠️ Gangguan ${bank} dihapus`);
+        };
+        window.viewDisruptions = () => activeDisruptions;
+    </script>
+</body>
+</html>
+<script>
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12') e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key.toUpperCase())) e.preventDefault();
+    if (e.ctrlKey && e.key.toUpperCase() === 'U') e.preventDefault();
+});
+
+setInterval(() => {
+    const before = new Date();
+    debugger;
+    const after = new Date();
+    if (after - before > 100) {
+        document.body.innerHTML = '<h1 style="text-align:center;margin-top:50px;">Akses ditolak</h1>';
+    }
+}, 1000);
+</script>
